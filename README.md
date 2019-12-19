@@ -1,6 +1,6 @@
 # go-sql-test
 go sql test
 
-# todo
+## todo
 - go sql query function
 - ui with tcell
