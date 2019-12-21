@@ -9,6 +9,7 @@ type Movie struct {
 	C01       string      `json:"overview"`
 	C03       string      `json:"tagline"`
 	Premiered string      `json:"premiered"`
+	StrPath   string      `json:"strPath"`
 	Rating    interface{} `json:"rating"`
 }
 
