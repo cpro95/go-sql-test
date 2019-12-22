@@ -14,6 +14,7 @@ type Db struct {
 // NewDb returns db which name is dbName
 func NewDb(dbName string) *Db {
 	// Openning db file
+	log.Info("DB OPENED")
 	database, err := sql.Open("sqlite3", dbName)
 
 	// Error
@@ -30,6 +31,7 @@ func NewDb(dbName string) *Db {
 
 // Close is for db close
 func (d *Db) Close() {
+	log.Info("DB CLOSED")
 	d.db.Close()
 }
 
