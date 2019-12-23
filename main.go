@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/gdamore/tcell"
+	"github.com/gdamore/tcell/encoding"
 	"github.com/rivo/tview"
 	log "github.com/sirupsen/logrus"
 )
@@ -24,6 +25,10 @@ func main() {
 	// log.Info(len(moviesArray))
 	// fmt.Println(moviesArray)
 
+	// Some encoding stuff in case the user isn't using UTF-8
+	encoding.Register()
+	tcell.SetEncodingFallback(tcell.EncodingFallbackASCII)
+
 	// Initialize application
 	app := tview.NewApplication()
 
@@ -34,28 +39,14 @@ func main() {
 
 	list := tview.NewList()
 
-	// Create submit button
-	// btn := tview.NewButton("Submit")
-
-	// Create empty Box to pad each side of appGrid
-	// bx := tview.NewBox()
-
-	// Create Grid containing the application's widgets
-	// appGrid := tview.NewGrid().
-	// 	SetColumns(-1, 24, 16, -1).
-	// 	SetRows(-1, 2, 3, -1).
-	// 	// AddItem(bx, 0, 0, 3, 1, 0, 0, false).
-	// 	// AddItem(bx, 0, 1, 1, 1, 0, 0, false).
-	// 	// AddItem(bx, 0, 3, 3, 1, 0, 0, false).
-	// 	// AddItem(bx, 3, 1, 1, 1, 0, 0, false).
-	// 	AddItem(label, 1, 1, 1, 1, 0, 0, false).
-	// 	AddItem(input, 1, 2, 1, 1, 0, 0, false).
-	// 	AddItem(btn, 2, 1, 1, 2, 0, 0, false)
-
 	// Create search result label
 	resultLabel := tview.NewTextView().
 		SetDynamicColors(true).
 		SetText("Search Results")
+
+	list.SetSelectedFunc(func(int, string, string, rune) {
+		resultLabel.SetText("dddd")
+	})
 
 	// Create Flex container
 	flex := tview.NewFlex().SetDirection(tview.FlexRow).
@@ -64,49 +55,54 @@ func main() {
 	listFlex := tview.NewFlex().SetDirection(tview.FlexRow).
 		AddItem(resultLabel, 2, 0, false).AddItem(list, 0, 1, false)
 
-	// submittedName is toggled each time Enter is pressed
-	var submittedName bool
-
+	modalView := tview.NewModal()
+	var moviesArray []Movie
 	// Capture user input
 	app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		// Anything handled here will be executed on the main thread
 		switch event.Key() {
 		case tcell.KeyEnter:
-			submittedName = !submittedName
-
-			if submittedName {
-				name := input.GetText()
-				if strings.TrimSpace(name) == "" {
-					name = "Anonymous"
-				}
-
-				// Create a modal dialog
-				// m := tview.NewModal().
-				// 	SetText(fmt.Sprintf("Greetings, %s!", name)).
-				// 	AddButtons([]string{"Hello"})
-
-				// Display and focus the dialog
-
-				moviesArray := db.GetMovieWithQuery(name)
+			name := input.GetText()
+			if strings.TrimSpace(name) != "" {
+				moviesArray = db.GetMovieWithQuery(name)
 				resultLabel.SetText(fmt.Sprintf("Search Results : %d", len(moviesArray)))
 				for _, item := range moviesArray {
 					list.AddItem(item.C00, "", 0, nil)
 				}
-
+				input.SetText("")
 				app.SetRoot(listFlex, true).SetFocus(list)
 			} else {
+				// Create a modal dialog
+				modalView.SetText(fmt.Sprintf("%s \n\n %s \n\n %s \n\n %s \n\n %s",
+					moviesArray[list.GetCurrentItem()].C00,
+					moviesArray[list.GetCurrentItem()].C01,
+					moviesArray[list.GetCurrentItem()].C03,
+					moviesArray[list.GetCurrentItem()].Premiered,
+					moviesArray[list.GetCurrentItem()].StrPath,
+				)).
+					SetBackgroundColor(tcell.ColorBlack)
+
+				// Display and focus the dialog
+				app.SetRoot(modalView, true).SetFocus(modalView)
+			}
+
+			return nil
+
+		case tcell.KeyEsc:
+			//Exit the application
+			if listFlex.HasFocus() {
 				// Clear the input field
 				input.SetText("")
 				list.Clear()
 
 				// Display appGrid and focus the input field
 				app.SetRoot(flex, true).SetFocus(input)
+			} else if modalView.HasFocus() {
+				app.SetRoot(listFlex, true).SetFocus(list)
+			} else {
+				app.Stop()
 			}
 
-			return nil
-		case tcell.KeyEsc:
-			//Exit the application
-			app.Stop()
 			return nil
 		}
 		return event
