@@ -44,9 +44,9 @@ func main() {
 		SetDynamicColors(true).
 		SetText("Search Results")
 
-	list.SetSelectedFunc(func(int, string, string, rune) {
-		resultLabel.SetText("dddd")
-	})
+	// list.SetSelectedFunc(func(int, string, string, rune) {
+	// 	resultLabel.SetText("dddd")
+	// })
 
 	// Create Flex container
 	flex := tview.NewFlex().SetDirection(tview.FlexRow).
@@ -71,7 +71,7 @@ func main() {
 				}
 				input.SetText("")
 				app.SetRoot(listFlex, true).SetFocus(list)
-			} else {
+			} else if len(moviesArray) > 0 {
 				// Create a modal dialog
 				modalView.SetText(fmt.Sprintf("%s \n\n %s \n\n %s \n\n %s \n\n %s",
 					moviesArray[list.GetCurrentItem()].C00,
@@ -94,6 +94,7 @@ func main() {
 				// Clear the input field
 				input.SetText("")
 				list.Clear()
+				moviesArray = nil
 
 				// Display appGrid and focus the input field
 				app.SetRoot(flex, true).SetFocus(input)
