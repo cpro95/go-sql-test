@@ -15,7 +15,7 @@ run:
 
 ## build: build this program
 build:
-	go build -o ${BINARY_NAME} ${GOFILES}
+	go build -o ${BINARY_NAME} -ldflags "-s -w" ${GOFILES}
 
 ## fmt: format go files
 fmt:

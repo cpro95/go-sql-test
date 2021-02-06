@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+
 	_ "github.com/mattn/go-sqlite3"
 	log "github.com/sirupsen/logrus"
 )
@@ -14,7 +15,6 @@ type Db struct {
 // NewDb returns db which name is dbName
 func NewDb(dbName string) *Db {
 	// Openning db file
-	log.Info("DB OPENED")
 	database, err := sql.Open("sqlite3", dbName)
 
 	// Error
@@ -26,6 +26,7 @@ func NewDb(dbName string) *Db {
 		db: database,
 	}
 
+	log.Info("DB OPENED")
 	return d
 }
 

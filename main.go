@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"path/filepath"
+	"runtime"
 	"strings"
 
 	"github.com/gdamore/tcell"
@@ -11,7 +13,13 @@ import (
 )
 
 func main() {
-	db := NewDb("./MyVideos107.db")
+	var dbName string
+
+	_, currentFilePath, _, _ := runtime.Caller(0)
+	dirpath, _ := filepath.Split(currentFilePath)
+
+	dbName = dirpath + "MyVideos116.db"
+	db := NewDb(dbName)
 	defer db.Close()
 	// fmt.Printf("%v", db.GetMovie())
 
@@ -73,11 +81,12 @@ func main() {
 				app.SetRoot(listFlex, true).SetFocus(list)
 			} else if len(moviesArray) > 0 {
 				// Create a modal dialog
-				modalView.SetText(fmt.Sprintf("%s \n\n %s \n\n %s \n\n %s \n\n %s",
+				modalView.SetText(fmt.Sprintf("%s \n\n %s \n\n %s \n\n Premiered: %s \n\n Rating: %.2f \n\n %s",
 					moviesArray[list.GetCurrentItem()].C00,
 					moviesArray[list.GetCurrentItem()].C01,
 					moviesArray[list.GetCurrentItem()].C03,
 					moviesArray[list.GetCurrentItem()].Premiered,
+					moviesArray[list.GetCurrentItem()].Rating,
 					moviesArray[list.GetCurrentItem()].StrPath,
 				)).
 					SetBackgroundColor(tcell.ColorBlack)
