@@ -37,93 +37,133 @@ func main() {
 	encoding.Register()
 	tcell.SetEncodingFallback(tcell.EncodingFallbackASCII)
 
+	ui := NewUI()
+
 	// Initialize application
-	app := tview.NewApplication()
+	ui.app = tview.NewApplication()
 
 	// Create input field
-	input := tview.NewInputField().
+	ui.input = tview.NewInputField().
 		SetPlaceholder(" Please Enter...").
 		SetPlaceholderTextColor(tcell.ColorYellow)
 
-	list := tview.NewList()
+	// Create list view
+	ui.list = tview.NewList()
 
 	// Create search result label
-	resultLabel := tview.NewTextView().
-		SetDynamicColors(true).
-		SetText("Search Results")
+	ui.resultLabel = tview.NewTextView().
+		SetTextColor(tcell.ColorYellow)
 
-	// list.SetSelectedFunc(func(int, string, string, rune) {
-	// 	resultLabel.SetText("dddd")
-	// })
+	// Create modal view
+	ui.modalView = tview.NewModal()
+
+	// when the key pressed, it will refresh screen with this func
+	ui.list.SetChangedFunc(func(index int, mainText string, secondaryText string, shortcut rune) {
+		ui.resultLabel.SetText(fmt.Sprintf("Search Results : %d, Index : %d", ui.list.GetItemCount(), index))
+	})
 
 	// Create Flex container
-	flex := tview.NewFlex().SetDirection(tview.FlexRow).
-		AddItem(tview.NewTextView().SetText("SEARCH MY MOVIES"), 2, 0, false).AddItem(input, 0, 1, false)
+	displayFlex := tview.NewFlex().SetDirection(tview.FlexRow).
+		AddItem(tview.NewTextView().SetText("SEARCH MY MOVIES"), 1, 1, false).
+		AddItem(ui.input, 2, 1, true).
+		AddItem(ui.resultLabel, 2, 1, false).
+		AddItem(tview.NewFlex().SetDirection(tview.FlexColumn).
+			AddItem(ui.list, 0, 1, false).
+			AddItem(tview.NewTextView().SetText("Info"), 0, 1, false), 10, 1, false)
 
-	listFlex := tview.NewFlex().SetDirection(tview.FlexRow).
-		AddItem(resultLabel, 2, 0, false).AddItem(list, 0, 1, false)
+	// listFlex := tview.NewFlex().SetDirection(tview.FlexRow).
+	// 	AddItem(ui.resultLabel, 0, 1, false).
+	// 	AddItem(ui.list, 0, 10, false).
+	// 	AddItem(tview.NewTextView().SetText("Info"), 20, 1, false)
 
-	modalView := tview.NewModal()
 	var moviesArray []Movie
+
 	// Capture user input
-	app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+	ui.app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+
 		// Anything handled here will be executed on the main thread
 		switch event.Key() {
 		case tcell.KeyEnter:
-			name := input.GetText()
+			name := ui.input.GetText()
 			if strings.TrimSpace(name) != "" {
 				moviesArray = db.GetMovieWithQuery(name)
-				resultLabel.SetText(fmt.Sprintf("Search Results : %d", len(moviesArray)))
+				// ui.resultLabel.SetText(fmt.Sprintf("Search Results : %d, Index : %d", len(moviesArray), ui.list.GetCurrentItem()))
 				for _, item := range moviesArray {
-					list.AddItem(item.C00, "", 0, nil)
+					ui.list.AddItem(item.C00, "", 0, nil)
 				}
-				input.SetText("")
-				app.SetRoot(listFlex, true).SetFocus(list)
+				ui.input.SetText("")
+				ui.app.SetRoot(displayFlex, true).SetFocus(ui.list)
 			} else if len(moviesArray) > 0 {
 				// Create a modal dialog
-				modalView.SetText(fmt.Sprintf("%s \n\n %s \n\n %s \n\n Premiered: %s \n\n Rating: %.2f \n\n %s",
-					moviesArray[list.GetCurrentItem()].C00,
-					moviesArray[list.GetCurrentItem()].C01,
-					moviesArray[list.GetCurrentItem()].C03,
-					moviesArray[list.GetCurrentItem()].Premiered,
-					moviesArray[list.GetCurrentItem()].Rating,
-					moviesArray[list.GetCurrentItem()].StrPath,
+				ui.modalView.SetText(fmt.Sprintf("%s \n\n %s \n\n %s \n\n Premiered: %s \n\n Rating: %.2f \n\n %s",
+					moviesArray[ui.list.GetCurrentItem()].C00,
+					moviesArray[ui.list.GetCurrentItem()].C01,
+					moviesArray[ui.list.GetCurrentItem()].C03,
+					moviesArray[ui.list.GetCurrentItem()].Premiered,
+					moviesArray[ui.list.GetCurrentItem()].Rating,
+					moviesArray[ui.list.GetCurrentItem()].StrPath,
 				)).
 					SetBackgroundColor(tcell.ColorBlack)
 
 				// Display and focus the dialog
-				app.SetRoot(modalView, true).SetFocus(modalView)
+				ui.app.SetRoot(ui.modalView, true).SetFocus(ui.modalView)
+			}
+		case tcell.KeyRune:
+			ch := event.Rune()
+			if ch == 'J' || ch == 'j' {
+				if ui.list.GetCurrentItem() == (ui.list.GetItemCount() - 1) {
+					ui.list.SetCurrentItem(0)
+				} else {
+					ui.list.SetCurrentItem(ui.list.GetCurrentItem() + 1)
+				}
 			}
 
-			return nil
+			if ch == 'K' || ch == 'k' {
+				ui.list.SetCurrentItem(ui.list.GetCurrentItem() - 1)
+			}
+
+			if ch == 'Q' || ch == 'q' {
+				if displayFlex.HasFocus() {
+					// Clear the input field
+					ui.input.SetText("")
+					ui.list.Clear()
+					moviesArray = nil
+
+					// Display appGrid and focus the input field
+					ui.app.SetRoot(displayFlex, true).SetFocus(ui.input)
+				} else if ui.modalView.HasFocus() {
+					ui.app.SetRoot(displayFlex, true).SetFocus(ui.list)
+				} else {
+					ui.app.Stop()
+				}
+			}
 
 		case tcell.KeyEsc:
 			//Exit the application
-			if listFlex.HasFocus() {
+			if displayFlex.HasFocus() {
 				// Clear the input field
-				input.SetText("")
-				list.Clear()
+				ui.input.SetText("")
+				ui.list.Clear()
 				moviesArray = nil
 
 				// Display appGrid and focus the input field
-				app.SetRoot(flex, true).SetFocus(input)
-			} else if modalView.HasFocus() {
-				app.SetRoot(listFlex, true).SetFocus(list)
+				ui.app.SetRoot(displayFlex, true).SetFocus(ui.input)
+			} else if ui.modalView.HasFocus() {
+				ui.app.SetRoot(displayFlex, true).SetFocus(ui.list)
 			} else {
-				app.Stop()
+				ui.app.Stop()
 			}
 
-			return nil
 		}
 		return event
 	})
 
 	// Set the grid as the application root and focus the input field
-	app.SetRoot(flex, true).SetFocus(input)
+	ui.app.SetRoot(displayFlex, true).SetFocus(ui.input)
 
 	// Run the application
 	log.Info("tview Loading")
-	err := app.Run()
+	err := ui.app.Run()
 	if err != nil {
 		log.Fatal(err)
 	}
