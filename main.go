@@ -109,8 +109,8 @@ func main() {
 		AddItem(ui.input, 2, 1, true).
 		AddItem(ui.resultLabel, 2, 2, false).
 		AddItem(tview.NewFlex().SetDirection(tview.FlexColumn).
-			AddItem(ui.list, 0, 2, false).
-			AddItem(ui.infoView, 0, 3, false).
+			AddItem(ui.list, 0, 4, false).
+			AddItem(ui.infoView, 0, 5, false).
 			AddItem(tview.NewTextView(), 0, 1, false), 0, 1, false)
 		// last TextView is a right margin for infoView
 
