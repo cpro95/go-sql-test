@@ -37,12 +37,13 @@ func (d *Db) Close() {
 }
 
 // GetMovie return Movies array
-func (d *Db) GetMovie() []Movie {
+func (d *Db) GetMovies() []Movie {
 	var movie Movie
 	var movies []Movie
 	var err error
 
-	rows, err := d.db.Query("select idMovie, c00, c01, c03, premiered, strPath, rating from movie_view where c00 like '%star%'")
+	// rows, err := d.db.Query("select idMovie, c00, c01, c03, premiered, strPath, rating from movie_view where c00 like '%star%'")
+	rows, err := d.db.Query("select idMovie, c00, c01, c03, premiered, strPath, rating from movie_view order by premiered desc")
 	if err != nil {
 		log.Fatal(err)
 	}
