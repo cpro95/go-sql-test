@@ -87,22 +87,17 @@ func main() {
 			name := ui.input.GetText()
 			if strings.TrimSpace(name) != "" {
 				ui.moviesArray = db.GetMovieWithQuery(name)
-				for _, item := range ui.moviesArray {
-					ui.list.AddItem(item.C00, "", 0, nil)
-				}
-				ui.input.SetText("")
-				ui.resultLabel.SetText(fmt.Sprintf("Search Results : %d, Index : %d", ui.list.GetItemCount(), 0))
-				ui.app.SetFocus(ui.list)
 			} else {
 				ui.moviesArray = db.GetMovies()
-				for _, item := range ui.moviesArray {
-					ui.list.AddItem(item.C00, "", 0, nil)
-				}
-				ui.input.SetText("")
-				ui.resultLabel.SetText(fmt.Sprintf("Search Results : %d, Index : %d", ui.list.GetItemCount(), 0))
-				ui.app.SetFocus(ui.list)
-
 			}
+
+			// item loading into ui.list
+			for _, item := range ui.moviesArray {
+				ui.list.AddItem(item.C00, "", 0, nil)
+			}
+			ui.input.SetText("")
+			ui.resultLabel.SetText(fmt.Sprintf("Search Results : %d, Index : %d", ui.list.GetItemCount(), 0))
+			ui.app.SetFocus(ui.list)
 		} else if key == tcell.KeyEscape {
 			handleQuit(ui)
 		}
@@ -196,7 +191,7 @@ func handleQuit(ui *UI) {
 		ui.resultLabel.Clear()
 		ui.moviesArray = nil
 
-		// Display appGrid and focus the input field
+		// focus the input field
 		ui.app.SetFocus(ui.input)
 	} else if ui.input.HasFocus() {
 		ui.app.Stop()
