@@ -150,19 +150,21 @@ func main() {
 
 			// goint to first items
 			if ch == 'g' {
-				if ui.firstG == false {
+				if !ui.firstG {
 					ui.firstG = true
 				} else {
 					ui.list.SetCurrentItem(0)
 					ui.firstG = false
 				}
 
-			} else if ui.firstG == true {
+			} else if ui.firstG {
 				ui.firstG = false
 			}
 
 			if ch == 'Q' || ch == 'q' {
-				handleQuit(ui)
+				if ui.list.HasFocus() {
+					handleQuit(ui)
+				}
 			}
 
 		}
